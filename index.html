@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>똑똑 호출기 - 스마트 교무실 시스템</title>
+    <!-- Tailwind CSS v4 CDN -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+        @theme {
+            --color-primary: #4A90E2;
+            --color-accent: #38B2AC;
+            --color-bg-base: #F0F4F8;
+            --color-text-main: #2D3748;
+            --color-text-sub: #718096;
+            --color-card-bg: #FFFFFF;
+        }
+
+        @layer base {
+            body { @apply bg-bg-base text-text-main font-sans antialiased; }
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        @keyframes pulse-custom {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        .animate-pulse-custom { animation: pulse-custom 1s infinite; }
+
+        .teacher-card {
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- Header -->
+    <header class="bg-card-bg border-b-2 border-gray-200 shadow-sm px-4 md:px-10 py-4 shrink-0 z-30">
+        <div class="max-w-[1600px] mx-auto w-full flex flex-col gap-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-primary p-2 rounded-lg text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    </div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-tighter text-primary">
+                        똑똑 <span class="text-accent underline underline-offset-4 decoration-2">호출기</span>
+                    </h1>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block border-r pr-6 border-gray-100">
+                        <p id="clock" class="text-xl md:text-2xl font-black text-primary leading-tight">00:00</p>
+                    </div>
+                    
+                    <div class="relative">
+                        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-text-sub">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="search-input"
+                            placeholder="성함 검색..."
+                            class="pl-10 pr-4 py-2 bg-bg-base/60 rounded-xl border-2 border-transparent focus:border-primary/30 focus:bg-white focus:outline-none w-36 md:w-48 lg:w-64 shadow-inner transition-all text-sm font-bold"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject Filter -->
+            <div id="filter-container" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-2 px-2">
+                <!-- Categories will be injected here -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-3 md:p-6 overflow-y-auto bg-bg-base/30 relative">
+        <div class="max-w-[1600px] mx-auto">
+            <div id="teacher-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5">
+                <!-- Teacher cards will be injected here -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden h-[60vh] flex flex-col items-center justify-center text-text-sub opacity-30 px-6 text-center">
+                <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                <p class="text-lg md:text-2xl font-black uppercase tracking-widest leading-tight text-center">해당하는 선생님을<br>찾을 수 없습니다</p>
+                <button onclick="resetFilters()" class="mt-4 text-primary font-bold underline">초기화</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-card-bg border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between px-6 md:px-12 py-3 md:py-4 gap-2 shrink-0 z-30">
+        <div class="flex items-center gap-2 text-text-sub">
+            <div class="w-1.5 h-1.5 bg-accent rounded-full animate-pulse"></div>
+            <p class="text-[10px] font-bold uppercase tracking-wider">SMART PAGER STATIC</p>
+        </div>
+        <p class="text-sm md:text-[18px] text-text-main font-bold tracking-tight text-center">
+            💡 <span class="text-primary underline decoration-2 underline-offset-4 font-black">성함</span>을 눌러 호출하세요.
+        </p>
+        <div class="hidden lg:block w-48 text-right text-[10px] text-text-sub font-medium">
+            System Online
+        </div>
+    </footer>
+
+    <script>
+        const INITIAL_TEACHERS = [
+            { id: 1, name: '박지영', subject: '정보' },
+            { id: 2, name: '이영희', subject: '수학' },
+            { id: 3, name: '박지성', subject: '체육' },
+            { id: 4, name: '최현진', subject: '영어' },
+            { id: 5, name: '정민호', subject: '과학' },
+            { id: 6, name: '강다혜', subject: '사회' },
+            { id: 7, name: '윤다경', subject: '음악' },
+            { id: 8, name: '임재범', subject: '미술' },
+            { id: 9, name: '한소희', subject: '한문' },
+            { id: 10, name: '오세훈', subject: '기술가정' },
+            { id: 11, name: '서강준', subject: '윤리' },
+            { id: 12, name: '유선호', subject: '정보' },
+            { id: 13, name: '장도연', subject: '제2외국어' },
+            { id: 14, name: '권순영', subject: '진로' },
+            { id: 15, name: '전소민', subject: '상담' },
+            { id: 16, name: '송지효', subject: '보건' },
+            { id: 17, name: '김종국', subject: '부장교사' },
+            { id: 18, name: '유재석', subject: '교무부장' },
+            { id: 19, name: '지석진', subject: '교감' },
+            { id: 20, name: '하하', subject: '창의체험' },
+        ].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+        const subjects = ['전체', ...new Set(INITIAL_TEACHERS.map(t => t.subject))];
+        let currentSearch = '';
+        let currentSubject = '전체';
+        let isCalling = false;
+
+        const teacherGrid = document.getElementById('teacher-grid');
+        const filterContainer = document.getElementById('filter-container');
+        const searchInput = document.getElementById('search-input');
+        const emptyState = document.getElementById('empty-state');
+        const clockElement = document.getElementById('clock');
+
+        function updateClock() {
+            const now = new Date();
+            clockElement.textContent = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function resetFilters() {
+            currentSearch = '';
+            currentSubject = '전체';
+            searchInput.value = '';
+            renderFilters();
+            renderTeachers();
+        }
+
+        function speak(name) {
+            if (isCalling) return;
+            isCalling = true;
+
+            const msg = new SpeechSynthesisUtterance(`${name} 선생님, 학생이 호출합니다.`);
+            msg.lang = 'ko-KR';
+            msg.rate = 1.0;
+            window.speechSynthesis.speak(msg);
+
+            setTimeout(() => { isCalling = false; }, 3000);
+        }
+
+        function renderTeachers() {
+            const filtered = INITIAL_TEACHERS.filter(t => {
+                const matchesSearch = t.name.includes(currentSearch);
+                const matchesSubject = currentSubject === '전체' || t.subject === currentSubject;
+                return matchesSearch && matchesSubject;
+            });
+
+            teacherGrid.innerHTML = '';
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            filtered.forEach(teacher => {
+                const card = document.createElement('button');
+                card.className = 'teacher-card relative overflow-hidden group aspect-[4/3.5] bg-card-bg rounded-2xl md:rounded-[2rem] border-2 border-white shadow-sm flex flex-col items-center justify-center transition-all cursor-pointer transform hover:-translate-y-1.5 hover:border-primary/40 active:scale-95';
+                
+                card.innerHTML = `
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gray-50 group-hover:bg-primary/30 transition-colors"></div>
+                    <div class="text-[10px] md:text-[12px] font-black text-text-sub/60 mb-1 md:mb-2 uppercase tracking-[1.5px]">${teacher.subject}</div>
+                    <div class="text-xl md:text-[28px] font-black text-text-main leading-tight flex flex-col items-center">
+                        <span>${teacher.name}</span>
+                        <span class="text-[12px] md:text-[14px] font-bold text-text-sub mt-0.5 md:mt-1">선생님</span>
+                    </div>
+                `;
+
+                card.onclick = () => {
+                    if (isCalling) return;
+                    
+                    const overlay = document.createElement('div');
+                    overlay.className = 'absolute inset-0 bg-primary/95 z-20 flex flex-col items-center justify-center text-white p-2 text-center';
+                    overlay.innerHTML = `
+                        <svg class="w-8 h-8 md:w-10 md:h-10 mb-2 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <span class="text-lg md:text-xl font-black animate-pulse-custom tracking-tighter uppercase leading-tight text-white">Calling...<br>${teacher.name}</span>
+                    `;
+                    card.appendChild(overlay);
+                    
+                    speak(teacher.name);
+
+                    setTimeout(() => {
+                        overlay.remove();
+                    }, 3000);
+                };
+
+                teacherGrid.appendChild(card);
+            });
+        }
+
+        function renderFilters() {
+            filterContainer.innerHTML = '';
+            subjects.forEach(subject => {
+                const btn = document.createElement('button');
+                const isActive = currentSubject === subject;
+                btn.className = `px-4 py-1.5 rounded-full text-xs md:text-sm font-bold transition-all whitespace-nowrap shadow-sm border ${
+                    isActive ? 'bg-primary text-white border-primary' : 'bg-white text-text-sub border-gray-100 hover:border-primary/20'
+                }`;
+                btn.textContent = subject;
+                btn.onclick = () => {
+                    currentSubject = subject;
+                    renderFilters(); 
+                    renderTeachers(); 
+                };
+                filterContainer.appendChild(btn);
+            });
+        }
+
+        searchInput.oninput = (e) => {
+            currentSearch = e.target.value;
+            renderTeachers();
+        };
+
+        renderFilters();
+        renderTeachers();
+    </script>
+</body>
+</html>
