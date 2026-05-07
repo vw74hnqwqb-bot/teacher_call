@@ -107,7 +107,9 @@
     </footer>
 
     <script>
-        const INITIAL_TEACHERS = [
+        const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/1IyaeN2Sw14URdDFd1K2U_pmlyZGlXJ9911Vv_iFWhIE/export?format=csv';
+        
+        let INITIAL_TEACHERS = [
             { id: 1, name: '박지영', subject: '정보' },
             { id: 2, name: '이영희', subject: '수학' },
             { id: 3, name: '박지성', subject: '체육' },
@@ -130,7 +132,7 @@
             { id: 20, name: '하하', subject: '창의체험' },
         ].sort((a, b) => a.name.localeCompare(b.name, 'ko'));
 
-        const subjects = ['전체', ...new Set(INITIAL_TEACHERS.map(t => t.subject))];
+        let subjects = ['전체', ...new Set(INITIAL_TEACHERS.map(t => t.subject))];
         let currentSearch = '';
         let currentSubject = '전체';
         let isCalling = false;
@@ -140,6 +142,51 @@
         const searchInput = document.getElementById('search-input');
         const emptyState = document.getElementById('empty-state');
         const clockElement = document.getElementById('clock');
+
+        // Fetch data from Google Sheet
+        async function fetchTeachers() {
+            try {
+                const response = await fetch(SPREADSHEET_URL);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const csvData = await response.text();
+                const lines = csvData.split(/\r?\n/).filter(line => line.trim() !== '');
+                
+                if (lines.length <= 1) return; // Only header or empty
+
+                const newTeachers = [];
+                const header = lines[0].split(',');
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',');
+                    if (!values[0]) continue;
+                    
+                    newTeachers.push({
+                        id: i,
+                        name: values[0].trim(),
+                        subject: (values[1] && values[1].trim()) || '선생님'
+                    });
+                }
+
+                if (newTeachers.length > 0) {
+                    INITIAL_TEACHERS = newTeachers.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+                    subjects = ['전체', ...new Set(INITIAL_TEACHERS.map(t => t.subject))];
+                    
+                    // Reset subject filter if current selected subject no longer exists
+                    if (!subjects.includes(currentSubject)) {
+                        currentSubject = '전체';
+                    }
+                    
+                    renderFilters();
+                    renderTeachers();
+                }
+            } catch (error) {
+                console.error('Error fetching teachers from Google Sheets:', error);
+            }
+        }
+
+        // Periodic update (every 30 seconds for "immediate" reflection)
+        setInterval(fetchTeachers, 30000);
+        fetchTeachers(); // Initial fetch
 
         function updateClock() {
             const now = new Date();
